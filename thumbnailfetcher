@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Thumbnail Fetcher</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+            color: #333;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #result {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .thumbnail {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            margin-top: 15px;
+        }
+
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            background-color: #fadbd8;
+            border-radius: 4px;
+        }
+
+        .metadata {
+            margin-top: 20px;
+            text-align: left;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Website Thumbnail Fetcher</h1>
+        <div class="input-group">
+            <input type="text" id="url-input" placeholder="Enter website URL (e.g., https://example.com)" />
+            <button id="fetch-btn">Fetch Thumbnail</button>
+        </div>
+        <div id="loader" class="loader"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlInput = document.getElementById('url-input');
+            const fetchBtn = document.getElementById('fetch-btn');
+            const result = document.getElementById('result');
+            const loader = document.getElementById('loader');
+
+            fetchBtn.addEventListener('click', fetchThumbnail);
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    fetchThumbnail();
+                }
+            });
+
+            function fetchThumbnail() {
+                const url = urlInput.value.trim();
+
+                if (!url) {
+                    showError('Please enter a valid URL');
+                    return;
+                }
+
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    urlInput.value = 'https://' + url;
+                }
+
+                // Using a CORS proxy to avoid cross-origin issues
+                const corsProxyUrl = 'https://api.allorigins.win/get?url=';
+                const encodedUrl = encodeURIComponent(urlInput.value);
+
+                result.innerHTML = '';
+                loader.style.display = 'block';
+
+                fetch(`${corsProxyUrl}${encodedUrl}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        loader.style.display = 'none';
+
+                        if (data.contents) {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(data.contents, 'text/html');
+
+                            // Try to get Open Graph image
+                            let thumbnailUrl = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
+
+                            // Fallbacks if OG image is not available
+                            if (!thumbnailUrl) {
+                                thumbnailUrl = doc.querySelector('meta[name="twitter:image"]')?.getAttribute('content');
+                            }
+
+                            if (!thumbnailUrl) {
+                                // Try to get the first image that might be a logo
+                                const logoImg = doc.querySelector('img[alt*="logo" i], img[src*="logo" i], img[class*="logo" i]');
+                                thumbnailUrl = logoImg?.src;
+                            }
+
+                            if (!thumbnailUrl) {
+                                // Get any image that's large enough
+                                const images = Array.from(doc.querySelectorAll('img'));
+                                const filteredImages = images.filter(img => {
+                                    const width = parseInt(img.getAttribute('width') || '0');
+                                    const height = parseInt(img.getAttribute('height') || '0');
+                                    return (width > 100 && height > 100) || img.src.includes('.jpg') || img.src.includes('.png');
+                                });
+
+                                if (filteredImages.length > 0) {
+                                    thumbnailUrl = filteredImages[0].src;
+                                }
+                            }
+
+                            if (thumbnailUrl) {
+                                // Convert relative URLs to absolute
+                                if (thumbnailUrl.startsWith('/')) {
+                                    const urlObj = new URL(urlInput.value);
+                                    thumbnailUrl = `${urlObj.protocol}//${urlObj.host}${thumbnailUrl}`;
+                                } else if (!thumbnailUrl.startsWith('http')) {
+                                    const urlObj = new URL(urlInput.value);
+                                    thumbnailUrl = `${urlObj.protocol}//${urlObj.host}/${thumbnailUrl}`;
+                                }
+
+                                // Display the thumbnail
+                                const img = document.createElement('img');
+                                img.src = thumbnailUrl;
+                                img.alt = 'Website Thumbnail';
+                                img.className = 'thumbnail';
+
+                                // Show metadata
+                                const title = doc.querySelector('title')?.textContent || 'No title found';
+                                const description = doc.querySelector('meta[name="description"]')?.getAttribute('content') ||
+                                    doc.querySelector('meta[property="og:description"]')?.getAttribute('content') ||
+                                    'No description found';
+
+                                const metadataDiv = document.createElement('div');
+                                metadataDiv.className = 'metadata';
+                                metadataDiv.innerHTML = `
+                                    <h3>${title}</h3>
+                                    <p>${description}</p>
+                                    <p><small>Thumbnail URL: ${thumbnailUrl}</small></p>
+                                `;
+
+                                result.appendChild(img);
+                                result.appendChild(metadataDiv);
+                            } else {
+                                showError('No thumbnail found for this website');
+                            }
+                        } else {
+                            showError('Could not fetch website content');
+                        }
+                    })
+                    .catch(error => {
+                        loader.style.display = 'none';
+                        showError('Error fetching the website: ' + error.message);
+                    });
+            }
+
+            function showError(message) {
+                result.innerHTML = `<div class="error">${message}</div>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
+
+Website Thumbnail Fetcher👆 ok

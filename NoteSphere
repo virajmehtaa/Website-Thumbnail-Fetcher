@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteSphere - Social Note Taking</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --gray: #adb5bd;
+            --light-gray: #e9ecef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .search-bar {
+            flex-grow: 0.3;
+            margin: 0 1rem;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 20px;
+            border: none;
+        }
+        
+        nav {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-item:hover {
+            background-color: var(--secondary);
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .sidebar {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        .sidebar h3 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        .tag-list, .trending-list {
+            list-style: none;
+        }
+        
+        .tag-list li, .trending-list li {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .tag-list li:hover, .trending-list li:hover {
+            background-color: var(--light-gray);
+            cursor: pointer;
+        }
+        
+        .trending-list .trending-note {
+            font-weight: bold;
+        }
+        
+        .trending-list .trending-author {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .create-note {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .create-note textarea {
+            width: 100%;
+            min-height: 100px;
+            border: 1px solid var(--light-gray);
+            border-radius: 5px;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            resize: vertical;
+        }
+        
+        .note-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .visibility-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .publish-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .publish-btn:hover {
+            background-color: var(--secondary);
+        }
+        
+        .note-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .note-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .note-author {
+            font-weight: bold;
+        }
+        
+        .note-time {
+            color: var(--gray);
+            font-size: 0.8rem;
+        }
+        
+        .note-content {
+            margin-bottom: 1rem;
+        }
+        
+        .note-footer {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .note-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--gray);
+            transition: color 0.3s;
+        }
+        
+        .note-actions button:hover {
+            color: var(--primary);
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .profile-pic {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .user-info h4 {
+            margin-bottom: 0.2rem;
+        }
+        
+        .user-bio {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .user-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-bar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">NoteSphere</div>
+        <div class="search-bar">
+            <input type="text" placeholder="Search notes...">
+        </div>
+        <nav>
+            <a href="#" class="nav-item">Home</a>
+            <a href="#" class="nav-item">Explore</a>
+            <a href="#" class="nav-item">Notifications</a>
+            <a href="#" class="nav-item">Profile</a>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <aside class="sidebar">
+            <h3>Popular Tags</h3>
+            <ul class="tag-list">
+                <li>#productivity</li>
+                <li>#learning</li>
+                <li>#coding</li>
+                <li>#science</li>
+                <li>#books</li>
+                <li>#ideas</li>
+            </ul>
+        </aside>
+        
+        <main class="main-content">
+            <div class="create-note">
+                <textarea placeholder="What are you thinking about?"></textarea>
+                <div class="note-actions">
+                    <div class="visibility-selector">
+                        <label for="visibility">Visibility:</label>
+                        <select id="visibility">
+                            <option value="public">Public</option>
+                            <option value="followers">Followers Only</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                    <button class="publish-btn">Publish Note</button>
+                </div>
+            </div>
+            
+            <div class="note-feed">
+                <div class="note-card">
+                    <div class="note-header">
+                        <span class="note-author">Alex Chen</span>
+                        <span class="note-time">2 hours ago</span>
+                    </div>
+                    <div class="note-content">
+                        <p>Just finished reading "Atomic Habits" by James Clear. Key takeaway: Small habits compound over time. 1% better every day = 37x better in a year!</p>
+                        <p>Some useful strategies:</p>
+                        <ul>
+                            <li>Make it obvious (cue)</li>
+                            <li>Make it attractive (craving)</li>
+                            <li>Make it easy (response)</li>
+                            <li>Make it satisfying (reward)</li>
+                        </ul>
+                    </div>
+                    <div class="note-footer">
+                        <div class="note-stats">
+                            <span>42 Likes</span> • 
+                            <span>8 Comments</span> • 
+                            <span>15 Saves</span>
+                        </div>
+                        <div class="note-actions">
+                            <button>Like</button> • 
+                            <button>Comment</button> • 
+                            <button>Save</button> • 
+                            <button>Share</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="note-card">
+                    <div class="note-header">
+                        <span class="note-author">Maya Johnson</span>
+                        <span class="note-time">Yesterday</span>
+                    </div>
+                    <div class="note-content">
+                        <p>Today's machine learning lecture notes:</p>
+                        <p>Gradient descent optimization algorithms:</p>
+                        <ol>
+                            <li>Batch Gradient Descent: Uses all training examples for each update</li>
+                            <li>Stochastic Gradient Descent: Uses only one example per update</li>
+                            <li>Mini-batch Gradient Descent: Uses a small random subset of data</li>
+                        </ol>
+                        <p>Pros and cons of each approach involve trade-offs between computational efficiency and convergence stability.</p>
+                    </div>
+                    <div class="note-footer">
+                        <div class="note-stats">
+                            <span>89 Likes</span> • 
+                            <span>23 Comments</span> • 
+                            <span>56 Saves</span>
+                        </div>
+                        <div class="note-actions">
+                            <button>Like</button> • 
+                            <button>Comment</button> • 
+                            <button>Save</button> • 
+                            <button>Share</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="note-card">
+                    <div class="note-header">
+                        <span class="note-author">Carlos Rodriguez</span>
+                        <span class="note-time">3 days ago</span>
+                    </div>
+                    <div class="note-content">
+                        <p>Recipe notes: Perfect French Press Coffee</p>
+                        <p>Ingredients:</p>
+                        <ul>
+                            <li>30g coffee (coarsely ground)</li>
+                            <li>500ml water (205°F/96°C)</li>
+                        </ul>
+                        <p>Steps:</p>
+                        <ol>
+                            <li>Add coffee to press</li>
+                            <li>Pour half the water, stir gently</li>
+                            <li>Wait 30 seconds (bloom phase)</li>
+                            <li>Add remaining water</li>
+                            <li>Put lid on, wait 4 minutes</li>
+                            <li>Press slowly</li>
+                        </ol>
+                        <p>Result: Rich, full-bodied coffee with no bitterness!</p>
+                    </div>
+                    <div class="note-footer">
+                        <div class="note-stats">
+                            <span>126 Likes</span> • 
+                            <span>42 Comments</span> • 
+                            <span>98 Saves</span>
+                        </div>
+                        <div class="note-actions">
+                            <button>Like</button> • 
+                            <button>Comment</button> • 
+                            <button>Save</button> • 
+                            <button>Share</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <aside class="sidebar">
+            <div class="user-profile">
+                <div class="profile-pic">JD</div>
+                <div class="user-info">
+                    <h4>Jane Doe</h4>
+                    <p class="user-bio">Note enthusiast, coffee lover, code wizard</p>
+                </div>
+            </div>
+            
+            <div class="user-stats">
+                <div class="stat">
+                    <div class="stat-value">128</div>
+                    <div class="stat-label">Notes</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">1.2k</div>
+                    <div class="stat-label">Followers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">845</div>
+                    <div class="stat-label">Following</div>
+                </div>
+            </div>
+            
+            <h3>Trending Notes</h3>
+            <ul class="trending-list">
+                <li>
+                    <div class="trending-note">How I organize my digital workspace</div>
+                    <div class="trending-author">by Thomas Wright</div>
+                </li>
+                <li>
+                    <div class="trending-note">5 note-taking methods that actually work</div>
+                    <div class="trending-author">by Sarah Kim</div>
+                </li>
+                <li>
+                    <div class="trending-note">The science of effective learning</div>
+                    <div class="trending-author">by Dr. James Peterson</div>
+                </li>
+                <li>
+                    <div class="trending-note">My journey through quantum physics</div>
+                    <div class="trending-author">by Elena Vasquez</div>
+                </li>
+            </ul>
+        </aside>
+    </div>
+    
+    <script>
+        // Simple demo functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.querySelector('textarea');
+            const publishBtn = document.querySelector('.publish-btn');
+            const noteFeed = document.querySelector('.note-feed');
+            
+            publishBtn.addEventListener('click', function() {
+                const noteText = textarea.value.trim();
+                if (noteText) {
+                    // Create new note card
+                    const noteCard = document.createElement('div');
+                    noteCard.className = 'note-card';
+                    
+                    // Current time
+                    const now = new Date();
+                    const timeString = 'Just now';
+                    
+                    noteCard.innerHTML = `
+                        <div class="note-header">
+                            <span class="note-author">Jane Doe</span>
+                            <span class="note-time">${timeString}</span>
+                        </div>
+                        <div class="note-content">
+                            <p>${noteText.replace(/\n/g, '</p><p>')}</p>
+                        </div>
+                        <div class="note-footer">
+                            <div class="note-stats">
+                                <span>0 Likes</span> • 
+                                <span>0 Comments</span> • 
+                                <span>0 Saves</span>
+                            </div>
+                            <div class="note-actions">
+                                <button>Like</button> • 
+                                <button>Comment</button> • 
+                                <button>Save</button> • 
+                                <button>Share</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Insert at the beginning of the feed
+                    noteFeed.insertBefore(noteCard, noteFeed.firstChild);
+                    
+                    // Clear the textarea
+                    textarea.value = '';
+                }
+            });
+            
+            // Like functionality demo
+            document.addEventListener('click', function(e) {
+                if (e.target.textContent === 'Like') {
+                    const noteCard = e.target.closest('.note-card');
+                    const statsText = noteCard.querySelector('.note-stats').firstChild;
+                    const currentLikes = parseInt(statsText.textContent);
+                    statsText.textContent = `${currentLikes + 1} Likes`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
+ "NoteSphere." ok

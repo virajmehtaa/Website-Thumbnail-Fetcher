@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImageTwin - Find Similar Images Across the Web</title>
+    <style>
+        :root {
+            --primary: #4a6bdf;
+            --primary-dark: #3a51ac;
+            --background: #f7f9fc;
+            --text: #333;
+            --gray: #6b7280;
+            --light-gray: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-icon {
+            margin-right: 10px;
+        }
+
+        .search-section {
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .search-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        p {
+            color: var(--gray);
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--light-gray);
+            padding: 40px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background-color: rgba(74, 107, 223, 0.03);
+        }
+
+        .upload-area.active {
+            border-color: var(--primary);
+            background-color: rgba(74, 107, 223, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            margin-bottom: 15px;
+        }
+
+        .search-options {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .option-input {
+            margin-right: 8px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .url-input {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px 0 0 6px;
+            font-size: 16px;
+        }
+
+        .url-button {
+            border-radius: 0 6px 6px 0;
+            margin-top: 0;
+        }
+
+        .features-section {
+            padding: 60px 0;
+            background-color: white;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background-color: var(--background);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .results-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .result-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .result-info {
+            padding: 15px;
+        }
+
+        .result-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-source {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .similarity-badge {
+            display: inline-block;
+            background: rgba(74, 107, 223, 0.1);
+            color: var(--primary);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        footer {
+            background-color: white;
+            padding: 40px 0;
+            margin-top: 60px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-links a {
+            color: var(--gray);
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .footer-links a {
+                margin: 0 10px;
+            }
+        }
+
+        #preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            display: none;
+            margin: 0 auto 20px auto;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="nav">
+                <div class="logo">
+                    <span class="logo-icon">🔍</span> ImageTwin
+                </div>
+                <div>
+                    <button id="sign-in">Sign In</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="search-section">
+            <div class="container">
+                <h1>Find Similar Images Across the Web</h1>
+                <p>Upload an image or enter a URL to discover visually similar or exact matches from billions of images
+                    online.</p>
+
+                <div class="search-container">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="upload">Upload Image</div>
+                        <div class="tab" data-tab="url">Image URL</div>
+                    </div>
+
+                    <div class="tab-content active" id="upload-tab">
+                        <img id="preview-image" src="" alt="Preview">
+
+                        <label for="file-input" class="upload-area" id="drop-area">
+                            <div class="upload-icon">📁</div>
+                            <div class="upload-text">Drag & drop an image or click to browse</div>
+                            <small>JPEG, PNG or GIF (max. 10MB)</small>
+                            <input type="file" id="file-input" accept="image/*">
+                        </label>
+                    </div>
+
+                    <div class="tab-content" id="url-tab">
+                        <div class="url-input">
+                            <input type="text" placeholder="Enter image URL" id="url-input-field">
+                            <button class="url-button">Search</button>
+                        </div>
+                    </div>
+
+                    <div class="search-options">
+                        <label class="option-label">
+                            <input type="radio" name="search-type" value="similar" checked class="option-input">
+                            Similar images
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="search-type" value="exact" class="option-input">
+                            Exact matches
+                        </label>
+                    </div>
+
+                    <button id="search-button">Search Images</button>
+                </div>
+
+                <div class="results-container" id="results">
+                    <h2>Search Results</h2>
+                    <div class="results-grid" id="results-grid">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features-section">
+            <div class="container">
+                <h2>Powerful Image Search Technology</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Advanced AI Recognition</h3>
+                        <p>Our cutting-edge computer vision algorithms analyze image content, colors, patterns, and
+                            objects to find the best matches.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🌐</div>
+                        <h3>Comprehensive Web Coverage</h3>
+                        <p>Search billions of images from across the entire web, including major websites, social media,
+                            and image repositories.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h3>Content Verification</h3>
+                        <p>Verify image authenticity, find the original source, or check if your images are being used
+                            elsewhere without permission.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div>© 2025 ImageTwin. All rights reserved.</div>
+                <div class="footer-links">
+                    <a href="#">About</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM elements
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const previewImage = document.getElementById('preview-image');
+        const searchButton = document.getElementById('search-button');
+        const resultsContainer = document.getElementById('results');
+        const resultsGrid = document.getElementById('results-grid');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // Mock data for demonstration
+        const mockResults = [
+            { imageUrl: '/api/placeholder/400/320', title: 'Forest landscape', source: 'unsplash.com', similarity: '98%' },
+            { imageUrl: '/api/placeholder/400/320', title: 'Mountain view', source: 'pexels.com', similarity: '95%' },
+            { imageUrl: '/api/placeholder/400/320', title: 'Nature photography', source: 'flickr.com', similarity: '92%' },
+            { imageUrl: '/api/placeholder/400/320', title: 'Sunset over hills', source: 'shutterstock.com', similarity: '90%' },
+            { imageUrl: '/api/placeholder/400/320', title: 'Green forest', source: 'getty.com', similarity: '87%' },
+            { imageUrl: '/api/placeholder/400/320', title: 'Lake view', source: 'behance.net', similarity: '85%' },
+            { imageUrl: '/api/placeholder/400/320', title: 'Alpine scenery', source: 'instagram.com', similarity: '83%' },
+            { imageUrl: '/api/placeholder/400/320', title: 'Travel photography', source: 'pinterest.com', similarity: '80%' }
+        ];
+
+        // Handle tab switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                // Add active class to clicked tab and its content
+                tab.classList.add('active');
+                const tabId = `${tab.dataset.tab}-tab`;
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Handle drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('active');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('active');
+        }
+
+        // Handle file drop
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                handleFiles(files);
+            }
+        }
+
+        // Handle file selection
+        fileInput.addEventListener('change', function () {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+
+                if (file.type.match('image.*')) {
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                        dropArea.classList.add('has-image');
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        // Handle search button click
+        searchButton.addEventListener('click', function () {
+            // Show loading state (would be implemented in a real app)
+
+            // Simulate search delay
+            setTimeout(() => {
+                // Display results
+                displayResults(mockResults);
+
+                // Show results container
+                resultsContainer.style.display = 'block';
+
+                // Scroll to results
+                resultsContainer.scrollIntoView({ behavior: 'smooth' });
+            }, 1500);
+        });
+
+        // Display search results
+        function displayResults(results) {
+            // Clear previous results
+            resultsGrid.innerHTML = '';
+
+            // Add new results
+            results.forEach(result => {
+                const resultCard = document.createElement('div');
+                resultCard.className = 'result-card';
+
+                resultCard.innerHTML = `
+                    <img src="${result.imageUrl}" alt="${result.title}" class="result-image">
+                    <div class="result-info">
+                        <div class="result-title">${result.title}</div>
+                        <div class="result-source">${result.source}</div>
+                        <div class="similarity-badge">Match: ${result.similarity}</div>
+                    </div>
+                `;
+
+                resultsGrid.appendChild(resultCard);
+            });
+        }
+    </script>
+</body>
+
+</html>
+
+"ImageTwin" 👆 ok

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Video Player with Download</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        #url-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+
+        #load-button {
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        #load-button:hover {
+            background-color: #2980b9;
+        }
+
+        .player-container {
+            width: 100%;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 4px;
+            background-color: #000;
+            max-height: 500px;
+        }
+
+        iframe {
+            width: 100%;
+            height: 500px;
+            border-radius: 4px;
+            border: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .download-btn {
+            padding: 10px 20px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            display: none;
+        }
+
+        .download-btn:hover {
+            background-color: #27ae60;
+        }
+
+        .status-message {
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .error {
+            background-color: #ffeeee;
+            color: #e74c3c;
+            display: none;
+        }
+
+        .success {
+            background-color: #eeffee;
+            color: #27ae60;
+            display: none;
+        }
+
+        .warning {
+            background-color: #ffffee;
+            color: #f39c12;
+            display: none;
+        }
+
+        .instructions {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .format-selector {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            width: 100%;
+            display: none;
+        }
+
+        .embed-options {
+            display: flex;
+            margin-top: 10px;
+            gap: 10px;
+            display: none;
+        }
+
+        .embed-option {
+            flex: 1;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #ddd;
+        }
+
+        .embed-option:hover {
+            background-color: #e9ecef;
+        }
+
+        .embed-option.selected {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Advanced Video Player</h1>
+
+        <div class="input-section">
+            <input type="text" id="url-input" placeholder="Paste video URL or website link containing video...">
+            <button id="load-button">Load Video</button>
+        </div>
+
+        <div class="loader" id="loader"></div>
+
+        <div class="embed-options" id="embed-options">
+            <div class="embed-option selected" data-type="direct">Direct Embed</div>
+            <div class="embed-option" data-type="iframe">iFrame Embed</div>
+            <div class="embed-option" data-type="video-tag">Video Tag</div>
+        </div>
+
+        <select id="format-selector" class="format-selector">
+            <option value="" disabled selected>Select video format</option>
+        </select>
+
+        <div class="player-container" id="player-container">
+            <!-- Player will be inserted here -->
+        </div>
+
+        <div class="controls">
+            <button class="download-btn" id="download-btn">Download Video</button>
+        </div>
+
+        <div id="error-message" class="status-message error"></div>
+        <div id="success-message" class="status-message success"></div>
+        <div id="warning-message" class="status-message warning"></div>
+
+        <div class="instructions">
+            <h3>How to use:</h3>
+            <p>1. Paste a URL that contains a video (YouTube, Vimeo, direct video links, etc.)</p>
+            <p>2. Click "Load Video" to extract and play the video</p>
+            <p>3. If multiple formats are available, select your preferred format</p>
+            <p>4. Use the "Download Video" button to save the video when available</p>
+            <p><strong>Note:</strong> This player supports direct video links (.mp4, .webm, etc.) and embeds from
+                popular platforms.</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 Advanced Video Player | For personal use only</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlInput = document.getElementById('url-input');
+            const loadButton = document.getElementById('load-button');
+            const playerContainer = document.getElementById('player-container');
+            const downloadBtn = document.getElementById('download-btn');
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const warningMessage = document.getElementById('warning-message');
+            const loader = document.getElementById('loader');
+            const formatSelector = document.getElementById('format-selector');
+            const embedOptions = document.getElementById('embed-options');
+
+            // Known video file extensions
+            const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '.avi', '.wmv', '.flv', '.mkv', '.3gp'];
+
+            // Supported video platforms and their extraction patterns
+            const videoPlatforms = [
+                {
+                    name: 'YouTube',
+                    pattern: /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i,
+                    embedUrl: 'https://www.youtube.com/embed/'
+                },
+                {
+                    name: 'Vimeo',
+                    pattern: /vimeo\.com\/(?:video\/)?([0-9]+)/i,
+                    embedUrl: 'https://player.vimeo.com/video/'
+                },
+                {
+                    name: 'Dailymotion',
+                    pattern: /(?:dailymotion\.com\/(?:video|hub)\/|dai\.ly\/)([0-9a-z]+)(?:[-_])?/i,
+                    embedUrl: 'https://www.dailymotion.com/embed/video/'
+                },
+                {
+                    name: 'Facebook',
+                    pattern: /facebook\.com\/([^\/]+)\/videos\/([0-9]+)/i,
+                    extractionFunction: (url, matches) => {
+                        return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0`;
+                    }
+                }
+            ];
+
+            // Track current video data
+            let currentVideoData = {
+                url: '',
+                format: '',
+                isDirectLink: false,
+                platform: null,
+                embedMethod: 'direct' // direct, iframe, or video-tag
+            };
+
+            // Set up embed option selection
+            document.querySelectorAll('.embed-option').forEach(option => {
+                option.addEventListener('click', function () {
+                    document.querySelectorAll('.embed-option').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    currentVideoData.embedMethod = this.getAttribute('data-type');
+                    loadSelectedVideo();
+                });
+            });
+
+            // Load button click handler
+            loadButton.addEventListener('click', function () {
+                processVideoUrl();
+            });
+
+            // Format selector change handler
+            formatSelector.addEventListener('change', function () {
+                currentVideoData.format = this.value;
+                loadSelectedVideo();
+            });
+
+            // Download button click handler
+            downloadBtn.addEventListener('click', function () {
+                if (currentVideoData.url) {
+                    // Create a temporary anchor to trigger download
+                    const a = document.createElement('a');
+                    a.href = currentVideoData.url;
+                    a.download = getFileName(currentVideoData.url);
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    successMessage.textContent = 'Download started. If it doesn\'t work, try right-clicking the video and selecting "Save video as..."';
+                    successMessage.style.display = 'block';
+                }
+            });
+
+            // Process the video URL
+            function processVideoUrl() {
+                const url = urlInput.value.trim();
+                if (!url) return;
+
+                resetUI();
+                showLoader();
+
+                // Check if it's a direct video link
+                if (isDirectVideoUrl(url)) {
+                    currentVideoData = {
+                        url: url,
+                        format: getFileExtension(url).substring(1),
+                        isDirectLink: true,
+                        platform: null,
+                        embedMethod: 'video-tag'
+                    };
+
+                    loadSelectedVideo();
+                    return;
+                }
+
+                // Check if it's a known video platform
+                for (const platform of videoPlatforms) {
+                    const matches = url.match(platform.pattern);
+                    if (matches && matches.length > 1) {
+                        currentVideoData = {
+                            url: url,
+                            format: '',
+                            isDirectLink: false,
+                            platform: platform,
+                            platformId: matches[1],
+                            matches: matches,
+                            embedMethod: 'iframe'
+                        };
+
+                        loadSelectedVideo();
+                        return;
+                    }
+                }
+
+                // If we get here, try to load as iframe anyway
+                currentVideoData = {
+                    url: url,
+                    format: '',
+                    isDirectLink: false,
+                    platform: null,
+                    embedMethod: 'iframe'
+                };
+
+                loadSelectedVideo();
+            }
+
+            // Load the selected video using the current settings
+            function loadSelectedVideo() {
+                hideLoader();
+                embedOptions.style.display = 'flex';
+
+                if (currentVideoData.isDirectLink) {
+                    // Direct video link handling
+                    switch (currentVideoData.embedMethod) {
+                        case 'video-tag':
+                            playerContainer.innerHTML = `<video src="${currentVideoData.url}" controls autoplay></video>`;
+                            break;
+                        case 'iframe':
+                            playerContainer.innerHTML = `<iframe src="${currentVideoData.url}" allowfullscreen></iframe>`;
+                            break;
+                        default:
+                            playerContainer.innerHTML = `<video src="${currentVideoData.url}" controls autoplay></video>`;
+                    }
+
+                    playerContainer.style.display = 'block';
+                    downloadBtn.style.display = 'block';
+                    successMessage.textContent = 'Direct video loaded successfully!';
+                    successMessage.style.display = 'block';
+
+                } else if (currentVideoData.platform) {
+                    // Platform-specific handling
+                    let embedUrl;
+
+                    if (currentVideoData.platform.extractionFunction) {
+                        embedUrl = currentVideoData.platform.extractionFunction(
+                            currentVideoData.url,
+                            currentVideoData.matches
+                        );
+                    } else {
+                        embedUrl = currentVideoData.platform.embedUrl + currentVideoData.platformId;
+                    }
+
+                    playerContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+                    playerContainer.style.display = 'block';
+
+                    warningMessage.textContent = `${currentVideoData.platform.name} video embedded. Note: Direct download may not be available due to ${currentVideoData.platform.name}'s policies.`;
+                    warningMessage.style.display = 'block';
+
+                } else {
+                    // Generic iframe fallback
+                    playerContainer.innerHTML = `<iframe src="${currentVideoData.url}" allowfullscreen></iframe>`;
+                    playerContainer.style.display = 'block';
+
+                    warningMessage.textContent = 'Attempting to embed this content. Download may not be available.';
+                    warningMessage.style.display = 'block';
+                }
+
+                // Add error handling for video/iframe loading
+                const videoElement = playerContainer.querySelector('video');
+                if (videoElement) {
+                    videoElement.addEventListener('error', handleMediaError);
+                    videoElement.addEventListener('loadeddata', function () {
+                        hideLoader();
+                        successMessage.textContent = 'Video loaded successfully!';
+                        successMessage.style.display = 'block';
+                    });
+                }
+
+                const iframeElement = playerContainer.querySelector('iframe');
+                if (iframeElement) {
+                    iframeElement.addEventListener('load', function () {
+                        hideLoader();
+                    });
+                    // Note: It's difficult to detect iframe loading errors reliably
+                }
+            }
+
+            // Handle media error
+            function handleMediaError() {
+                hideLoader();
+                errorMessage.textContent = 'Error loading the video. Please check the URL and try again.';
+                errorMessage.style.display = 'block';
+                playerContainer.style.display = 'none';
+                downloadBtn.style.display = 'none';
+            }
+
+            // Check if a URL is a direct video link
+            function isDirectVideoUrl(url) {
+                return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+            }
+
+            // Get file extension from URL
+            function getFileExtension(url) {
+                for (const ext of videoExtensions) {
+                    if (url.toLowerCase().includes(ext)) {
+                        return ext;
+                    }
+                }
+                return '.mp4'; // Default extension
+            }
+
+            // Get a suitable filename for download
+            function getFileName(url) {
+                let filename = 'video' + getFileExtension(url);
+
+                // Try to extract a better filename from the URL
+                const urlParts = url.split('/');
+                const lastPart = urlParts[urlParts.length - 1].split('?')[0];
+
+                if (lastPart && lastPart.includes('.')) {
+                    filename = lastPart;
+                }
+
+                return filename;
+            }
+
+            // Reset UI state
+            function resetUI() {
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'none';
+                warningMessage.style.display = 'none';
+                downloadBtn.style.display = 'none';
+                playerContainer.style.display = 'none';
+                formatSelector.style.display = 'none';
+                embedOptions.style.display = 'none';
+            }
+
+            // Show loader
+            function showLoader() {
+                loader.style.display = 'block';
+            }
+
+            // Hide loader
+            function hideLoader() {
+                loader.style.display = 'none';
+            }
+
+            // Handle Enter key press
+            urlInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    loadButton.click();
+                }
+            });
+
+            // Initialize with example if query param is present
+            const urlParams = new URLSearchParams(window.location.search);
+            const exampleUrl = urlParams.get('url');
+            if (exampleUrl) {
+                urlInput.value = decodeURIComponent(exampleUrl);
+                loadButton.click();
+            }
+        });
+    </script>
+</body>
+
+</html>
+
+Advanced Video Player

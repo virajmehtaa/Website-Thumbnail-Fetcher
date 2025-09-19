@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fresh Useless Web Button</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        #button {
+            background-color: #00adb5;
+            border: none;
+            color: white;
+            padding: 20px 40px;
+            font-size: 1.5em;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s;
+        }
+
+        #button:hover {
+            background-color: #00cfd2;
+        }
+
+        #joint {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #bbb;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button id="button">TAKE ME TO A</button>
+    <div id="joint">FRESH WEIRD WEBSITE</div>
+
+    <script>
+        function uselessWebButton(button) {
+            var initialClick = false;
+            var randomRange = 5;
+            let sitelistName = 'fresh-sites-list';
+
+            var sitesList = [
+                'https://radio.garden', // explore live radio from around the world
+                'https://stars.chromeexperiments.com', // interactive star map
+                'https://neal.fun/draw-your-island/', // draw an island and it gets simulated
+                'https://thispersondoesnotexist.com', // fake AI-generated people
+                'https://www.fallingfalling.com/', // strange audio-visual noise art
+                'https://www.sanger.dk/', // a creepy dancing Santa 😅
+                'https://neal.fun/absurd-trolley-problems/', // silly moral choices
+                'https://www.nightdrive.fm/', // drive at night + chill synth music
+                'https://mondrian.io/', // generate random Mondrian art
+                'https://mood.gg/', // pick a music mood playlist
+                'https://life.stats.live/', // a live personal life tracker
+                'https://theuselesswebindex.netlify.app/', // a list of weird links (meta, I know!)
+                'https://lavaanalyzer.com/', // fake "lava" analyzer app
+                'https://beesbeesbees.com/', // yes... bees
+                'https://www.cameronsworld.net/', // retro Geocities art archive
+                'https://www.zoomquilt2.com/', // endless surreal artwork zoom
+                'https://you.regettingold.com/', // shows stats about your life
+                'https://slowroads.io/', // chill drive forever in a low-poly world
+                'https://hacker-simulator.com/', // type and feel like a hacker
+                'https://longdogechallenge.netlify.app/', // an alternate doge challenge
+            ];
+
+            var sites = null;
+
+            var init = function () {
+                button.onclick = onButtonClick;
+                sites = sitesList.slice();
+
+                if (localStorage[sitelistName]) {
+                    var currentSites = JSON.parse(localStorage[sitelistName]);
+                    var filteredSites = currentSites.filter(site => sitesList.includes(site));
+                    if (filteredSites.length > 0) {
+                        sites = filteredSites;
+                    }
+                }
+            };
+
+            var selectWebsite = function () {
+                var range = Math.min(randomRange, sites.length);
+                var index = Math.floor(Math.random() * range);
+                var site = sites[index];
+                sites.splice(index, 1);
+                return site;
+            };
+
+            var openSite = function (url) {
+                window.open(url, '_blank');
+            };
+
+            var onButtonClick = function () {
+                if (!initialClick) {
+                    document.getElementById('joint').innerText = 'TO ANOTHER RANDOM WEBSITE';
+                    initialClick = true;
+                }
+
+                var url = selectWebsite();
+                openSite(url);
+
+                if (sites.length === 0) {
+                    sites = sitesList.slice(); // reset
+                }
+
+                localStorage[sitelistName] = JSON.stringify(sites);
+            };
+
+            init();
+        }
+
+        var uselessWebButtonInstance = new uselessWebButton(document.getElementById('button'));
+    </script>
+
+</body>
+
+</html>

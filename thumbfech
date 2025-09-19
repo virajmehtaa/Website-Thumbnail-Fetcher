@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Thumbnail Fetcher</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .mode-selector {
+            display: flex;
+            margin-bottom: 20px;
+            background-color: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            background-color: transparent;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        .mode-btn.active {
+            background-color: #3498db;
+            color: white;
+        }
+        #result {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .thumbnail {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            margin-top: 15px;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            background-color: #fadbd8;
+            border-radius: 4px;
+        }
+        .metadata {
+            margin-top: 20px;
+            text-align: left;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .note {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e7f3fe;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        #alternative-method {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .thumbnail-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .play-button::after {
+            content: '';
+            display: block;
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 20px solid white;
+            margin-left: 5px;
+        }
+        .platforms {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .platform-badge {
+            background-color: #f1f5f9;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .download-btn {
+            margin-top: 15px;
+            background-color: #27ae60;
+            border-radius: 4px;
+            padding: 8px 15px;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        .download-btn:hover {
+            background-color: #219653;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Universal Thumbnail Fetcher</h1>
+        <p class="subtitle">Get thumbnails from any website or video platform</p>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="auto">Auto Detect</button>
+            <button class="mode-btn" data-mode="website">Website</button>
+            <button class="mode-btn" data-mode="video">Video</button>
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="url-input" placeholder="Enter URL (website or video link)" />
+            <button id="fetch-btn">Fetch Thumbnail</button>
+        </div>
+        
+        <div class="platforms">
+            <span class="platform-badge">YouTube</span>
+            <span class="platform-badge">Vimeo</span>
+            <span class="platform-badge">Dailymotion</span>
+            <span class="platform-badge">Facebook</span>
+            <span class="platform-badge">Twitter/X</span>
+            <span class="platform-badge">Instagram</span>
+            <span class="platform-badge">TikTok</span>
+            <span class="platform-badge">Any Website</span>
+        </div>
+        
+        <div id="loader" class="loader"></div>
+        <div id="result"></div>
+        
+        <div id="alternative-method" style="display: none;">
+            <h3>Try Alternative Method</h3>
+            <p>If the thumbnail doesn't appear, try this alternative:</p>
+            <button id="alternative-btn">Use Screenshot Service</button>
+        </div>
+        
+        <div class="note">
+            <p><strong>Note:</strong> For best results, enter complete URLs including https:// (e.g., https://www.youtube.com/watch?v=ABC123)</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlInput = document.getElementById('url-input');
+            const fetchBtn = document.getElementById('fetch-btn');
+            const alternativeBtn = document.getElementById('alternative-btn');
+            const result = document.getElementById('result');
+            const loader = document.getElementById('loader');
+            const alternativeMethod = document.getElementById('alternative-method');
+            const modeBtns = document.querySelectorAll('.mode-btn');
+            
+            let currentMode = 'auto';
+            
+            // Mode selector
+            modeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modeBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentMode = btn.dataset.mode;
+                });
+            });
+
+            fetchBtn.addEventListener('click', fetchThumbnail);
+            alternativeBtn.addEventListener('click', useAlternativeMethod);
+            
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    fetchThumbnail();
+                }
+            });
+
+            function validateAndFormatUrl(inputUrl) {
+                let url = inputUrl.trim();
+                
+                if (!url) {
+                    return null;
+                }
+
+                // Add https:// if no protocol is specified
+                if (!url.match(/^[a-zA-Z]+:\/\//)) {
+                    url = 'https://' + url;
+                }
+                
+                // Basic URL validation
+                try {
+                    new URL(url);
+                    return url;
+                } catch (e) {
+                    return null;
+                }
+            }
+            
+            function detectUrlType(url) {
+                const videoPatterns = {
+                    youtube: /youtube\.com\/watch|youtu\.be\/|youtube\.com\/embed/i,
+                    vimeo: /vimeo\.com|player\.vimeo\.com/i,
+                    dailymotion: /dailymotion\.com|dai\.ly/i,
+                    facebook: /facebook\.com\/.*\/videos/i,
+                    twitter: /twitter\.com|x\.com/i,
+                    instagram: /instagram\.com|instagr\.am/i,
+                    tiktok: /tiktok\.com/i
+                };
+                
+                for (const platform in videoPatterns) {
+                    if (videoPatterns[platform].test(url)) {
+                        return 'video';
+                    }
+                }
+                
+                return 'website';
+            }
+            
+            function extractVideoId(url) {
+                let videoId = null;
+                let platform = null;
+                
+                // YouTube
+                const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+                const youtubeMatch = url.match(youtubeRegex);
+                if (youtubeMatch && youtubeMatch[1]) {
+                    videoId = youtubeMatch[1];
+                    platform = 'youtube';
+                    return { videoId, platform };
+                }
+                
+                // Vimeo
+                const vimeoRegex = /(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)([0-9]+)/i;
+                const vimeoMatch = url.match(vimeoRegex);
+                if (vimeoMatch && vimeoMatch[1]) {
+                    videoId = vimeoMatch[1];
+                    platform = 'vimeo';
+                    return { videoId, platform };
+                }
+                
+                // Dailymotion
+                const dailymotionRegex = /(?:dailymotion\.com\/(?:video\/|embed\/video\/)|dai\.ly\/)([a-zA-Z0-9]+)/i;
+                const dailymotionMatch = url.match(dailymotionRegex);
+                if (dailymotionMatch && dailymotionMatch[1]) {
+                    videoId = dailymotionMatch[1];
+                    platform = 'dailymotion';
+                    return { videoId, platform };
+                }
+                
+                return { videoId, platform };
+            }
+            
+            function getVideoThumbnail(url) {
+                const { videoId, platform } = extractVideoId(url);
+                
+                if (!videoId || !platform) {
+                    return null;
+                }
+                
+                if (platform === 'youtube') {
+                    // Try to get highest quality thumbnail first
+                    return {
+                        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+                        backupUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                        platform: 'YouTube',
+                        videoId
+                    };
+                } else if (platform === 'vimeo') {
+                    // For Vimeo, we'll use the oEmbed API
+                    return {
+                        apiUrl: `https://vimeo.com/api/v2/video/${videoId}.json`,
+                        platform: 'Vimeo',
+                        videoId
+                    };
+                } else if (platform === 'dailymotion') {
+                    return {
+                        thumbnailUrl: `https://www.dailymotion.com/thumbnail/video/${videoId}`,
+                        platform: 'Dailymotion',
+                        videoId
+                    };
+                }
+                
+                return null;
+            }
+
+            function fetchThumbnail() {
+                const inputUrl = urlInput.value;
+                const url = validateAndFormatUrl(inputUrl);
+                
+                if (!url) {
+                    showError('Please enter a valid URL');
+                    return;
+                }
+
+                // Update input with formatted URL
+                urlInput.value = url;
+                
+                // Determine URL type if in auto mode
+                const urlType = currentMode === 'auto' ? detectUrlType(url) : currentMode;
+                
+                result.innerHTML = '';
+                loader.style.display = 'block';
+                alternativeMethod.style.display = 'none';
+                
+                if (urlType === 'video') {
+                    handleVideoThumbnail(url);
+                } else {
+                    handleWebsiteThumbnail(url);
+                }
+            }
+            
+            function handleVideoThumbnail(url) {
+                const videoInfo = getVideoThumbnail(url);
+                
+                if (!videoInfo) {
+                    // Fallback to website thumbnail method
+                    handleWebsiteThumbnail(url);
+                    return;
+                }
+                
+                if (videoInfo.platform === 'Vimeo' && videoInfo.apiUrl) {
+                    // Handle Vimeo using their API
+                    fetch(videoInfo.apiUrl)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data[0] && data[0].thumbnail_large) {
+                                displayVideoThumbnail(
+                                    data[0].thumbnail_large,
+                                    videoInfo.platform,
+                                    data[0].title || 'Vimeo Video',
+                                    url
+                                );
+                            } else {
+                                throw new Error('Could not fetch Vimeo thumbnail');
+                            }
+                        })
+                        .catch(error => {
+                            handleWebsiteThumbnail(url);
+                        });
+                } else if (videoInfo.thumbnailUrl) {
+                    // Handle platforms with direct thumbnail URLs (YouTube, Dailymotion)
+                    displayVideoThumbnail(
+                        videoInfo.thumbnailUrl,
+                        videoInfo.platform,
+                        `${videoInfo.platform} Video`,
+                        url,
+                        videoInfo.backupUrl
+                    );
+                }
+            }
+            
+            function displayVideoThumbnail(thumbnailUrl, platform, title, originalUrl, backupUrl = null) {
+                loader.style.display = 'none';
+                
+                const thumbnailContainer = document.createElement('div');
+                thumbnailContainer.className = 'thumbnail-container';
+                
+                const img = document.createElement('img');
+                img.src = thumbnailUrl;
+                img.alt = `${platform} Video Thumbnail`;
+                img.className = 'thumbnail';
+                
+                if (backupUrl) {
+                    img.onerror = () => {
+                        img.src = backupUrl;
+                    };
+                }
+                
+                img.onerror = () => {
+                    if (backupUrl && img.src !== backupUrl) {
+                        img.src = backupUrl;
+                    } else {
+                        thumbnailContainer.remove();
+                        alternativeMethod.style.display = 'block';
+                        showError(`Could not load the ${platform} thumbnail.`);
+                    }
+                };
+                
+                const playButton = document.createElement('div');
+                playButton.className = 'play-button';
+                
+                thumbnailContainer.appendChild(img);
+                thumbnailContainer.appendChild(playButton);
+                
+                const metadataDiv = document.createElement('div');
+                metadataDiv.className = 'metadata';
+                metadataDiv.innerHTML = `
+                    <h3>${title}</h3>
+                    <p>Platform: ${platform}</p>
+                    <p><small>Source URL: ${originalUrl}</small></p>
+                `;
+                
+                const downloadLink = document.createElement('a');
+                downloadLink.href = thumbnailUrl;
+                downloadLink.className = 'download-btn';
+                downloadLink.download = `${platform.toLowerCase()}-thumbnail.jpg`;
+                downloadLink.target = '_blank';
+                downloadLink.innerText = 'Download Thumbnail';
+                
+                result.appendChild(thumbnailContainer);
+                result.appendChild(metadataDiv);
+                result.appendChild(downloadLink);
+            }
+            
+            function handleWebsiteThumbnail(url) {
+                // Use corsanywhere as a CORS proxy
+                const corsProxy = 'https://corsproxy.io/?';
+                const encodedUrl = encodeURIComponent(url);
+                
+                fetch(`${corsProxy}${encodedUrl}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        loader.style.display = 'none';
+                        
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // Try to get thumbnails in order of preference
+                        let thumbnailUrl = null;
+                        
+                        // 1. Open Graph image (high quality for social sharing)
+                        thumbnailUrl = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
+                        
+                        // 2. Twitter card image
+                        if (!thumbnailUrl) {
+                            thumbnailUrl = doc.querySelector('meta[name="twitter:image"]')?.getAttribute('content');
+                        }
+                        
+                        // 3. Apple touch icon or other favicons (often good quality)
+                        if (!thumbnailUrl) {
+                            const appleIcon = doc.querySelector('link[rel="apple-touch-icon"], link[rel="apple-touch-icon-precomposed"]');
+                            thumbnailUrl = appleIcon?.getAttribute('href');
+                        }
+                        
+                        // 4. Largest favicon
+                        if (!thumbnailUrl) {
+                            const icons = Array.from(doc.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]'));
+                            if (icons.length > 0) {
+                                // Sort by size if specified
+                                icons.sort((a, b) => {
+                                    const sizeA = a.getAttribute('sizes')?.split('x')[0] || 0;
+                                    const sizeB = b.getAttribute('sizes')?.split('x')[0] || 0;
+                                    return Number(sizeB) - Number(sizeA);
+                                });
+                                thumbnailUrl = icons[0].getAttribute('href');
+                            }
+                        }
+                        
+                        // 5. Try to find logo or main image
+                        if (!thumbnailUrl) {
+                            // Look for logo in header
+                            const logoImg = doc.querySelector('img[alt*="logo" i], img[src*="logo" i], img[class*="logo" i]');
+                            thumbnailUrl = logoImg?.getAttribute('src');
+                            
+                            // Look in the main content
+                            if (!thumbnailUrl) {
+                                const firstLargeImg = Array.from(doc.querySelectorAll('img')).find(img => {
+                                    const width = parseInt(img.getAttribute('width') || '0');
+                                    const height = parseInt(img.getAttribute('height') || '0');
+                                    return (width > 100 && height > 100) || img.getAttribute('src')?.includes('hero');
+                                });
+                                thumbnailUrl = firstLargeImg?.getAttribute('src');
+                            }
+                        }
+
+                        if (thumbnailUrl) {
+                            // Fix relative URLs
+                            if (thumbnailUrl.startsWith('//')) {
+                                thumbnailUrl = 'https:' + thumbnailUrl;
+                            } else if (thumbnailUrl.startsWith('/')) {
+                                const urlObj = new URL(url);
+                                thumbnailUrl = `${urlObj.protocol}//${urlObj.host}${thumbnailUrl}`;
+                            } else if (!thumbnailUrl.startsWith('http')) {
+                                const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+                                thumbnailUrl = `${baseUrl}/${thumbnailUrl.startsWith('/') ? thumbnailUrl.slice(1) : thumbnailUrl}`;
+                            }
+
+                            // Display the thumbnail
+                            const img = document.createElement('img');
+                            img.src = thumbnailUrl;
+                            img.alt = 'Website Thumbnail';
+                            img.className = 'thumbnail';
+                            img.onerror = () => {
+                                img.remove();
+                                alternativeMethod.style.display = 'block';
+                                showError('Could not load the image. Try the alternative method.');
+                            };
+                            
+                            // Get metadata
+                            const title = doc.querySelector('title')?.textContent || 'No title found';
+                            const description = 
+                                doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
+                                doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
+                                'No description found';
+
+                            const metadataDiv = document.createElement('div');
+                            metadataDiv.className = 'metadata';
+                            metadataDiv.innerHTML = `
+                                <h3>${title}</h3>
+                                <p>${description}</p>
+                                <p><small>Source URL: ${url}</small></p>
+                            `;
+                            
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = thumbnailUrl;
+                            downloadLink.className = 'download-btn';
+                            downloadLink.download = 'website-thumbnail.jpg';
+                            downloadLink.target = '_blank';
+                            downloadLink.innerText = 'Download Thumbnail';
+                            
+                            result.appendChild(img);
+                            result.appendChild(metadataDiv);
+                            result.appendChild(downloadLink);
+                        } else {
+                            alternativeMethod.style.display = 'block';
+                            showError('No suitable thumbnail found for this website');
+                        }
+                    })
+                    .catch(error => {
+                        loader.style.display = 'none';
+                        alternativeMethod.style.display = 'block';
+                        showError('Error fetching the website: ' + error.message);
+                    });
+            }
+            
+            function useAlternativeMethod() {
+                const url = validateAndFormatUrl(urlInput.value);
+                
+                if (!url) {
+                    showError('Please enter a valid URL');
+                    return;
+                }
+                
+                // Use a screenshot service instead
+                const screenshotUrl = `https://cdn.statically.io/screenshot/${url.replace(/^https?:\/\//, '')}`;
+                
+                result.innerHTML = '';
+                
+                const img = document.createElement('img');
+                img.src = screenshotUrl;
+                img.alt = 'Website Screenshot';
+                img.className = 'thumbnail';
+                
+                const metadataDiv = document.createElement('div');
+                metadataDiv.className = 'metadata';
+                metadataDiv.innerHTML = `
+                    <h3>Screenshot of ${url}</h3>
+                    <p><small>Generated using screenshot service</small></p>
+                `;
+                
+                const downloadLink = document.createElement('a');
+                downloadLink.href = screenshotUrl;
+                downloadLink.className = 'download-btn';
+                downloadLink.download = 'website-screenshot.jpg';
+                downloadLink.target = '_blank';
+                downloadLink.innerText = 'Download Screenshot';
+                
+                result.appendChild(img);
+                result.appendChild(metadataDiv);
+                result.appendChild(downloadLink);
+            }
+
+            function showError(message) {
+                result.innerHTML = `<div class="error">${message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

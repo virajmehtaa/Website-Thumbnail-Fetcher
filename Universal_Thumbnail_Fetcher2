@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Universal Thumbnail Fetcher</title>
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  background: #f7f9fc;
+  color: #333;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.container {
+  background: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+h1 {
+  text-align: center;
+  color: #2c3e50;
+}
+.subtitle {
+  text-align: center;
+  color: #7f8c8d;
+  margin-bottom: 20px;
+}
+.input-group {
+  display: flex;
+  margin-bottom: 20px;
+}
+input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px 0 0 4px;
+}
+button {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+}
+button:hover {
+  background: #2980b9;
+}
+.thumbnail {
+  display: block;
+  max-width: 100%;
+  margin: 20px auto;
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+.error {
+  background: #ffe3e3;
+  color: #b71c1c;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+}
+.metadata {
+  background: #f8f9fa;
+  border-radius: 4px;
+  padding: 10px;
+}
+.download-btn {
+  display: inline-block;
+  background: #27ae60;
+  color: white;
+  padding: 8px 15px;
+  text-decoration: none;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+.download-btn:hover {
+  background: #219653;
+}
+.loader {
+  display: none;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.note {
+  font-size: 13px;
+  background: #e7f3fe;
+  padding: 10px;
+  border-left: 4px solid #3498db;
+  margin-top: 20px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Universal Thumbnail Fetcher</h1>
+  <p class="subtitle">Fetch thumbnails from YouTube, Vimeo, Dailymotion or any website</p>
+  
+  <div class="input-group">
+    <input type="text" id="urlInput" placeholder="Enter URL (e.g. YouTube, Vimeo, etc.)" />
+    <button id="fetchBtn">Fetch</button>
+  </div>
+
+  <div id="loader" class="loader"></div>
+  <div id="result"></div>
+
+  <div class="note">
+    <b>Note:</b> For websites, fetching may fail due to CORS restrictions. In that case, you can use the screenshot fallback.
+  </div>
+</div>
+
+<script>
+document.getElementById("fetchBtn").addEventListener("click", fetchThumbnail);
+document.getElementById("urlInput").addEventListener("keypress", (e)=>{
+  if (e.key === "Enter") fetchThumbnail();
+});
+
+function showError(msg) {
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("result").innerHTML = `<div class='error'>${msg}</div>`;
+}
+
+function fetchThumbnail() {
+  const url = document.getElementById("urlInput").value.trim();
+  const result = document.getElementById("result");
+  const loader = document.getElementById("loader");
+  result.innerHTML = "";
+  loader.style.display = "block";
+  if (!url) return showError("Please enter a URL.");
+
+  // detect platform
+  if (/youtu\.be|youtube\.com/.test(url)) return handleYouTube(url);
+  if (/vimeo\.com/.test(url)) return handleVimeo(url);
+  if (/dailymotion\.com|dai\.ly/.test(url)) return handleDailymotion(url);
+  return handleWebsite(url);
+}
+
+function handleYouTube(url) {
+  const idMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+  if (!idMatch) return showError("Invalid YouTube URL.");
+  const id = idMatch[1];
+  const thumb = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+  showThumbnail(thumb, "YouTube Video", url);
+}
+
+function handleVimeo(url) {
+  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (!match) return showError("Invalid Vimeo URL.");
+  const id = match[1];
+  fetch(`https://noembed.com/embed?url=https://vimeo.com/${id}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.thumbnail_url) showThumbnail(data.thumbnail_url, data.title, url);
+      else throw new Error("No thumbnail found");
+    })
+    .catch(()=>showError("Failed to fetch Vimeo thumbnail."));
+}
+
+function handleDailymotion(url) {
+  const match = url.match(/(?:video\/|dai\.ly\/)([A-Za-z0-9]+)/);
+  if (!match) return showError("Invalid Dailymotion URL.");
+  const id = match[1];
+  const thumb = `https://www.dailymotion.com/thumbnail/video/${id}`;
+  showThumbnail(thumb, "Dailymotion Video", url);
+}
+
+function handleWebsite(url) {
+  const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(url);
+  fetch(proxy)
+    .then(res => res.json())
+    .then(data => {
+      const html = data.contents;
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      let thumb = doc.querySelector('meta[property="og:image"]')?.content 
+               || doc.querySelector('meta[name="twitter:image"]')?.content 
+               || doc.querySelector('link[rel="apple-touch-icon"]')?.href 
+               || doc.querySelector('link[rel="icon"]')?.href;
+
+      if (!thumb) {
+        // fallback screenshot
+        const screenshot = `https://cdn.statically.io/screenshot/${url.replace(/^https?:\/\//, '')}`;
+        showThumbnail(screenshot, "Website Screenshot (Fallback)", url);
+      } else {
+        if (thumb.startsWith("//")) thumb = "https:" + thumb;
+        else if (thumb.startsWith("/")) {
+          const u = new URL(url);
+          thumb = u.origin + thumb;
+        }
+        showThumbnail(thumb, "Website Thumbnail", url);
+      }
+    })
+    .catch(()=> {
+      const fallback = `https://cdn.statically.io/screenshot/${url.replace(/^https?:\/\//, '')}`;
+      showThumbnail(fallback, "Website Screenshot (Fallback)", url);
+    });
+}
+
+function showThumbnail(imgUrl, title, srcUrl) {
+  const result = document.getElementById("result");
+  const loader = document.getElementById("loader");
+  loader.style.display = "none";
+  result.innerHTML = `
+    <img src="${imgUrl}" class="thumbnail" alt="thumbnail" />
+    <div class="metadata">
+      <h3>${title}</h3>
+      <p><small>Source: <a href="${srcUrl}" target="_blank">${srcUrl}</a></small></p>
+      <a href="${imgUrl}" target="_blank" download class="download-btn">Download Thumbnail</a>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
+
+[this is working]
